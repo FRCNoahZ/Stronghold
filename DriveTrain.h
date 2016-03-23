@@ -1,6 +1,7 @@
 #include "WPILib.h"
 #include "Position.h"
-#include "Math.h"
+#include <math.h>
+#include "HAL/CanTalonSRX.h"
 
 #ifndef SRC_DRIVETRAIN_H
 #define SRC_DRIVETRAIN_H
@@ -8,14 +9,16 @@
 
 class DriveTrain : public RobotDrive
 {
-	CANTalon left;
-	CANTalon right;
+	CANTalon leftMaster;
+	CanTalonSRX leftSlave;
+	CANTalon rightMaster;
+	CANTalon rightSlave;
+
 	Position *position;
 public:
-	DriveTrain(uint32_t leftDeviceID, uint32_t rightDeviceID, Position *position_);
+	DriveTrain(uint32_t leftMasterDeviceID, uint32_t leftSlaveDeviceID, uint32_t rightMasterDeviceID, uint32_t rightSlaveDeviceID, Position *position_);
 	void Enable();
 	void Disable();
-	void TankDrive(float leftSpeed, float rightSpeed);
 	void TurnToAngle(float angle);
 	void TurnToRelativeAngle(float angle);
 	void MoveDistance(float distance, float speed);

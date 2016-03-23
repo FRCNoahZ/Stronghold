@@ -13,8 +13,7 @@ Shooter::Shooter(uint32_t leftTalon, uint32_t rightTalon, uint32_t angleTalon, P
 	aim(angleTalon),
 	ballSensor(Constants::shooterIRPin),
 	servo(Constants::servoPin),
-	position(position_),
-	pot(Constants::potPin, 90, 0)
+	position(position_)
 {
 	left.SetControlMode(CANTalon::ControlMode::kPercentVbus);
 	right.SetControlMode(CANTalon::ControlMode::kPercentVbus);
@@ -42,21 +41,49 @@ void Shooter::SetSpeed(float leftSpeed, float rightSpeed) //speeds are a percent
 }
 
 void Shooter::SetSpeed(float speed) {
-	left.Set(speed);
-	right.Set(-speed);
+	left.Set(-speed);
+	right.Set(speed);
 }
 
 void Shooter::SetAngle(float angle) { //degrees
-	int value;
-	while (pot.Get() < angle) {
-		aim.Set(value);
-		value++;
+	//TODO: Don't set angle more than Constants::maximumAngle or less than Constants::minimumAngle
+	if (angle < 0 || angle > 68.2) {
+		SmartDashboard::PutString("Set Angle Failed", "Angle was out of bounds. Bounds are [0, 68.2]");
+		return;
 	}
+	aim.SetControlMode(CANTalon::ControlMode::kPosition);
+	int position = aim.Get();
+	int potValue = (int)(754 - (angle * Constants::aimDegreesToPotFactor));
+	if (potValue < 488) {
+		SmartDashboard::PutString("Set Angle Failed for a different reason", "Angle was out of bounds. Will not clear the bar");
+	}/*
+	if (aim.GetAnalogInRaw() < potValue) {
+		while (aim.GetAnalogInRaw() < potValue) {
+			aim.Set(position);
+			position--; //may need to change increment value
+		}
+	} else {
+		while (aim.GetAnalogInRaw() > potValue) {
+			aim.Set(position);
+			position++; //depending on how the talon is wired this may need to be -= and the other one may need to be +=
+		}
+	}*/
+	aim.SetAnalogPosition(potValue);
+	aim.SetControlMode(CANTalon::ControlMode::kPercentVbus);
 }
 
-void Shooter::PrepareShooter() {
-	SetSpeed(.75);
-	SetAngle(45);
+void Shooter::Move(float speed) {
+	aim.SetControlMode(CANTalon::ControlMode::kPercentVbus);
+	//if (aim.GetAnalogInRaw() < 754 && speed > 0) {
+	//	aim.Set(speed);
+	//} else if (aim.GetAnalogInRaw() > 209 && speed < 0) {
+		aim.Set(speed);
+	//} else {
+	//	aim.Set(0);
+	//	return;
+	//}
+	SmartDashboard::PutBoolean("Shooter Top Limit Switch Hit", aim.GetReverseLimitOK());
+	SmartDashboard::PutBoolean("Shooter Bottom Limit Switch Hit", aim.GetForwardLimitOK());
 }
 
 void Shooter::PrepareShooter(float angle, float speed) {
@@ -65,49 +92,28 @@ void Shooter::PrepareShooter(float angle, float speed) {
 }
 
 void Shooter::LoadBall() {
-	SetSpeed(-.35, .35);
-	if (HasBall() == true) {
-		SetSpeed(0);
-	}
+	SetSpeed(-.6);
 }
 
 void Shooter::Shoot() {
-	servo.SetAngle(servo.GetMaxAngle()); //angle will need to be adjusted with testing
+	servo.Set(Constants::servoMaxPosition); //angle will need to be adjusted with testing
 	Wait(.5);
-	servo.SetAngle(servo.GetMinAngle()); //angle will need to be adjusted with testing
+	servo.Set(Constants::servoMinPosition); //angle will need to be adjusted with testing
 }
 
 bool Shooter::HasBall() {
-	if (ballSensor.Get() == 0) { //may be 1. The website says 0 is found barrier but then the output of the example code according to their instructions says otherwise
-		return true;
-	} else {
-		return false;
-	}
+	return !ballSensor.Get();
 }
 
 float Shooter::WheelSpeed() {
-	if (left.Get() != right.Get()) {
-		return -1;
-	} else {
-		return left.Get();
-	}
+	return left.Get();
 }
 
 float Shooter::Angle() {
-	return pot.Get();
+	return 90 - (aim.GetAnalogInRaw() - 209) / Constants::aimDegreesToPotFactor; //may need adjustment
 }
 
-float Shooter::AngleToShoot() {
-	float min = Constants::distances[0];
-	float actual = position->DistanceToTower();
-	float angleToShoot;
-	/*int index = 0;
-	for (int i = 0; i < 420; i++) {
-		if (abs(Constants::distances[i] - actual) < abs(min - actual)) { //these lines don't seem to want to work
-			min = Constants::distances[i]; //these lines don't seem to want to work
-			index = i;
-		}
-	}
-	angleToShoot = 30.55 + index * .05;*/
-	return angleToShoot;
+void Shooter::ReadPot() {
+	SmartDashboard::PutNumber("Pot Raw", aim.GetAnalogInRaw());
+	SmartDashboard::PutNumber("Pot reg", aim.GetAnalogIn());
 }

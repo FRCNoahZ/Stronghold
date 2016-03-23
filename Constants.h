@@ -1,45 +1,43 @@
-/*
- * Constants.h
- *
- *  Created on: Feb 13, 2016
- *      Author: Noah
- */
+#ifndef SRC_CONSTANTS_H
+#define SRC_CONSTANTS_H
 
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
-
-
-class Constants {
-public:
-
-
-	//PWM Out Pins
-	static constexpr int driveLeftPin	= 1;
-	static constexpr int driveRightPin	= 0;
-
+namespace Constants {
 	//DriveTrain
-	static constexpr int driveLeftTalonID  = 1;
-	static constexpr int driveRightTalonID = 0;
+	static constexpr int driveLeftMasterID  = 12;
+	static constexpr int driveRightMasterID = 14;
+	static constexpr int driveLeftSlaveID = 13;
+	static constexpr int driveRightSlaveID = 15;
 
 	//Joystick axis and buttons
 	static constexpr int driveJoystickChannel = 0;
 	static constexpr int driveLeftStickX = 0;
 	static constexpr int driveLeftStickY = 1;
-	static constexpr int driveL2         = 3;
+	static constexpr int driveL2 = 3;
 	static constexpr int driveRightStickY = 5;
-	static constexpr int calibrateButton = 99;
-	static constexpr int shootButton = 99;
+	static constexpr int calibrateButton = 12;
+	static constexpr int shootButton = 1;
+	static constexpr int prepareToShootButton = 3;
+	static constexpr int ejectButton = 14;
+	static constexpr int stopShooterWheels = 13;
+	static constexpr int xButton = 2;
 
 	//Shooter
-	static constexpr int shooterLeftTalonID = 7;
-	static constexpr int shooterRightTalonID = 8;
-	static constexpr int shooterAimTalonID = 99;
-	static constexpr int shooterIRPin = 99;
-	static constexpr int servoPin = 99;
-	static constexpr int potPin = 99;
+	static constexpr int shooterLeftTalonID = 8;
+	static constexpr int shooterRightTalonID = 9;
+	static constexpr int shooterAimTalonID = 10;
+	static constexpr int shooterIRPin = 6;
+	static constexpr int servoPin = 0;
 	static constexpr float shooter100Velocity = 12.33; //via physics major
 	static constexpr float shooter75Velocity = 9.2475; //may need to be changed. Currently assuming percent voltage to velocity is linear
 	static constexpr float shooter50Velocity = 6.165; //may need to be changed. Currently assuming percent voltage to velocity is linear
+	static constexpr float minimumAngle = 32;	//Actual value: needs more accuracy
+	static constexpr float maximumAngle = 70; //TODO: temporary value
+	static constexpr float servoMaxPosition = 0.9;
+	static constexpr float servoMinPosition = 0.3;
+	static constexpr float aimDegreesToPotFactor = 545 / 68.2;
+
+	//Arm
+	static constexpr int armTalonPin  = 11;
 
 	//Position
 	static constexpr float towerX = 0;
@@ -50,7 +48,7 @@ public:
 	static constexpr float gyroOffset = 90;
 	static constexpr int ticksPerRotation = 2048;
 	static constexpr float quadratureEncoderFactor = .25;
-	static constexpr int wheelRadius = 3 * .0254; //meters
+	static constexpr float wheelRadius = 3 * .0254; //meters
 
 	static constexpr float distances[] = {
 			6.4879885,
@@ -474,10 +472,6 @@ public:
 			1.8104911,
 			1.8068568
 	};
-
-	Constants();
 };
 
-
-
-#endif /* CONSTANTS_H_ */
+#endif

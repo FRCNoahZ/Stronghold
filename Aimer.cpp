@@ -19,6 +19,10 @@ float Aimer::GetSpeedToShoot()
 {
 	return 42;
 }
+int Aimer::GetAge()
+{
+	return (int)table->GetNumber("sinceLastUpdate", 4);
+}
 
 float Aimer::GetAngleToShoot()
 {

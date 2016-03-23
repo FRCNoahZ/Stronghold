@@ -2,13 +2,13 @@
  * Position.cpp
  *
  *  Created on: Feb 13, 2016
- *      Author: Owner
+ *      Author: Noah Zbozny
  */
 
 #include "Position.h"
 #include "math.h"
-#define PI 3.14159265
 
+#define PI 3.14159265
 
 	Position::Position():
 	mxp(I2C::Port::kMXP, 50)
@@ -64,6 +64,10 @@
 		TrackY(movingForward, encoderTicks);
 	}
 
+	void Position::ZeroYaw() {
+		mxp.ZeroYaw();
+	}
+
 /*	void Position::Calibrate() {
 		int nearestObstacle = NearestObstacle();
 		xPos = obstacleXPos[nearestObstacle];
@@ -105,6 +109,7 @@
 		float uLength;
 		float vLength;
 		float angleToTower;
+
 		dotProduct = (-1 * xPos) * (xToTower) + (-1 * xPos * tan(90 - theta)) * (yToTower);
 		uLength = sqrt(pow(-1 * xPos, 2) + pow(-1 * xPos * tan(90 - theta), 2));
 		vLength = sqrt(pow(xToTower, 2) + pow(yToTower, 2));
@@ -116,6 +121,7 @@
 		float xPart;
 		float yPart;
 		float distance;
+
 		xPart = Constants::towerX - xPos;
 		yPart = Constants::towerY - yPos;
 		distance = sqrt(pow(xPart, 2) + pow(yPart, 2));
@@ -124,6 +130,10 @@
 
 	float Position::GetAngle() {
 		return fmod((mxp.GetYaw() + Constants::gyroOffset), 360) * PI / 180;
+	}
+
+	float Position::GetAngleDegrees() {
+		return mxp.GetYaw() + 180;
 	}
 
 	float Position::GetPitch() {

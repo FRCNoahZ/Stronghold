@@ -1,44 +1,74 @@
 #include "DriveTrain.h"
 #define PI 3.14159265
 
-DriveTrain::DriveTrain(uint32_t leftDeviceID, uint32_t rightDeviceID, Position *position_):
-	left(leftDeviceID),
-	right(rightDeviceID),
-	position(position_),
-	RobotDrive(left, right)
+DriveTrain::DriveTrain(uint32_t leftMasterDeviceID, uint32_t leftSlaveDeviceID, uint32_t rightMasterDeviceID, uint32_t rightSlaveDeviceID, Position *position_):
+	RobotDrive(leftMaster, rightMaster),
+	leftMaster(leftMasterDeviceID),
+	leftSlave(leftSlaveDeviceID),
+	rightMaster(rightMasterDeviceID),
+	rightSlave(rightSlaveDeviceID),
+	position(position_)
 {
-	left.SetControlMode(CANTalon::ControlMode::kPercentVbus);
-	right.SetControlMode(CANTalon::ControlMode::kPercentVbus);
+	leftMaster.SetControlMode(CANTalon::ControlMode::kPercentVbus);
+	leftMaster.SetClosedLoopOutputDirection(true);
+	leftSlave.SetModeSelect(CanTalonSRX::kMode_SlaveFollower);
+	leftSlave.SetDemand(leftMasterDeviceID);
+	leftSlave.SetRevMotDuringCloseLoopEn(1);
+
+	rightMaster.SetControlMode(CANTalon::ControlMode::kPercentVbus);
+	rightSlave.SetControlMode(CANTalon::ControlMode::kFollower);
+	rightSlave.Set(Constants::driveRightMasterID);
 }
 
 void DriveTrain::Enable()
 {
-	left.Enable();
-	right.Enable();
+	leftMaster.Enable();
+	rightMaster.Enable();
 }
 
 void DriveTrain::Disable()
 {
-	left.Disable();
-	right.Disable();
+	leftMaster.Disable();
+	rightMaster.Disable();
 }
 
-void DriveTrain::TankDrive(float leftSpeed, float rightSpeed) {
-	left.Set(leftSpeed);
-	right.Set(rightSpeed);
-}
 
+//TODO: Take a sensitivity
 void DriveTrain::TurnToAngle(float angle) { //give angle in degrees
-	float currentAngle = 0;
-	float p = .75 / 180;
-	float offset;
-	while (abs(currentAngle - angle) > 1.0)
+	float currentAngle = position->GetAngleDegrees();
+	float k_p = 0.75;
+	float k_i = 0.2;
+	float p   = 0;
+	float i   = 0;
+	unsigned int failsafe = 0;
+
+	float output = 0;
+	float error = 0;
+	while (abs(currentAngle - angle) > 10.0 && failsafe < 500)
 	{
-		offset = angle - currentAngle;
-		left.Set(offset * p);
-		right.Set(-offset * p);
-		currentAngle = position->GetAngle();
+		std::cout << "PI Loop: " << std::endl;
+		std::cout << " P: " << p << std::endl;
+		std::cout << " I: " << i << std::endl;
+		std::cout << " Output: " << output << std::endl;
+
+		i = (i + k_i * error) * .01;
+		error = abs(angle - currentAngle);
+		if(error > 180.0)
+			error = error * -1;
+		error /= 180.0;
+
+		p = k_p * error;
+		output = i + p;
+
+		leftMaster.Set(output);   //TODO: Noah, try this, if it spins, then try replacing the 0.5 with 'output'
+		rightMaster.Set(-output);
+		currentAngle = position->GetAngleDegrees();
+		failsafe++;
+		Wait(0.01);
 	}
+
+	leftMaster.Set(0);
+	rightMaster.Set(0);
 }
 
 void DriveTrain::TurnToRelativeAngle(float angle) {
@@ -49,7 +79,7 @@ void DriveTrain::MoveDistance(float distance, float speed) {
 	float xOffset = position->GetX();
 	float yOffset = position->GetY();
 	while (sqrt(pow(position->GetX() - xOffset, 2) + pow(position->GetY() - yOffset, 2)) < distance) {
-		left.Set(speed);
-		right.Set(speed);
+		leftMaster.Set(speed);
+		rightMaster.Set(speed);
 	}
 }
